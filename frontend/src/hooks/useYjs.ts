@@ -98,7 +98,7 @@ export function useYjs({ sessionId, initialCode = '' }: UseYjsOptions): UseYjsRe
 
     // Insert initial code only after first sync, if document is empty
     let initialCodeInserted = false;
-    provider.on('synced', (isSynced: boolean) => {
+    provider.on('sync', (isSynced: boolean) => {
       if (isSynced && !initialCodeInserted && yText.length === 0 && initialCode) {
         initialCodeInserted = true;
         yText.insert(0, initialCode);
@@ -132,8 +132,8 @@ export function useYjs({ sessionId, initialCode = '' }: UseYjsOptions): UseYjsRe
       setIsLoading(false);
     });
 
-    provider.on('connection-close', (event: CloseEvent) => {
-      if (event.code === 4004) {
+    provider.on('connection-close', (event: CloseEvent | null) => {
+      if (event?.code === 4004) {
         setError('Session not found');
       }
       setIsConnected(false);
