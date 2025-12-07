@@ -1,0 +1,524 @@
+openapi: 3.0.3
+info:
+  title: Collaborative Code Editor API
+  description: |
+    API для совместного редактирования кода в реальном времени.
+    
+    ## Основные возможности
+    - Создание сессий для совместного кодинга
+    - Real-time синхронизация через WebSocket (Yjs protocol)
+    - Поддержка множества языков программирования
+    
+    ## WebSocket Protocol
+    WebSocket endpoint `/ws/{session_id}` использует Yjs binary protocol
+    для синхронизации документов между клиентами.
+  version: 1.0.0
+  contact:
+    name: API Support
+
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+  - url: https://api.collab-editor.example.com
+    description: Production server
+
+tags:
+  - name: sessions
+    description: Управление сессиями совместного редактирования
+  - name: health
+    description: Health checks
+
+paths:
+  /health:
+    get:
+      tags:
+        - health
+      summary: Health check
+      description: Проверка работоспособности сервера
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Сервер работает
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /api/sessions:
+    post:
+      tags:
+        - sessions
+      summary: Создать новую сессию
+      description: |
+        Создаёт новую сессию для совместного редактирования кода.
+        Возвращает уникальный ID сессии и URL для подключения.
+      operationId: createSession
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSessionRequest'
+      responses:
+        '201':
+          description: Сессия успешно создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+
+    get:
+      tags:
+        - sessions
+      summary: Получить список активных сессий
+      description: Возвращает список всех активных сессий (для админки/отладки)
+      operationId: listSessions
+      parameters:
+        - name: limit
+          in: query
+          description: Максимальное количество сессий
+          required: false
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 100
+        - name: offset
+          in: query
+          description: Смещение для пагинации
+          required: false
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+      responses:
+        '200':
+          description: Список сессий
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionListResponse'
+
+  /api/sessions/{session_id}:
+    get:
+      tags:
+        - sessions
+      summary: Получить информацию о сессии
+      description: Возвращает детали конкретной сессии по её ID
+      operationId: getSession
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      responses:
+        '200':
+          description: Информация о сессии
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '404':
+          description: Сессия не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    patch:
+      tags:
+        - sessions
+      summary: Обновить настройки сессии
+      description: Обновляет язык программирования или другие настройки сессии
+      operationId: updateSession
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSessionRequest'
+      responses:
+        '200':
+          description: Сессия обновлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '404':
+          description: Сессия не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+
+    delete:
+      tags:
+        - sessions
+      summary: Удалить сессию
+      description: Удаляет сессию и отключает всех участников
+      operationId: deleteSession
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      responses:
+        '204':
+          description: Сессия удалена
+        '404':
+          description: Сессия не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/sessions/{session_id}/execute:
+    post:
+      tags:
+        - sessions
+      summary: Выполнить код (опционально, для server-side execution)
+      description: |
+        Выполняет код на сервере в изолированном окружении.
+        Примечание: в MVP выполнение происходит в браузере через WASM.
+        Этот endpoint — для будущего расширения.
+      operationId: executeCode
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecuteCodeRequest'
+      responses:
+        '200':
+          description: Результат выполнения
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecuteCodeResponse'
+        '400':
+          description: Ошибка выполнения
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionErrorResponse'
+        '404':
+          description: Сессия не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  parameters:
+    SessionId:
+      name: session_id
+      in: path
+      description: Уникальный идентификатор сессии
+      required: true
+      schema:
+        type: string
+        minLength: 8
+        maxLength: 32
+        pattern: '^[a-zA-Z0-9_-]+$'
+        example: 'abc123xyz'
+
+  schemas:
+    # === Enums ===
+    ProgrammingLanguage:
+      type: string
+      enum:
+        - python
+        - javascript
+        - typescript
+        - java
+        - cpp
+        - go
+        - rust
+        - ruby
+        - php
+        - sql
+      description: Поддерживаемые языки программирования
+      example: python
+
+    SessionStatus:
+      type: string
+      enum:
+        - active
+        - idle
+        - closed
+      description: Статус сессии
+
+    # === Request Schemas ===
+    CreateSessionRequest:
+      type: object
+      properties:
+        language:
+          $ref: '#/components/schemas/ProgrammingLanguage'
+        initial_code:
+          type: string
+          description: Начальный код в редакторе
+          maxLength: 100000
+          default: ''
+          example: '# Write your code here\nprint("Hello, World!")'
+        title:
+          type: string
+          description: Название сессии (опционально)
+          maxLength: 200
+          example: 'Python Interview - Candidate John'
+
+    UpdateSessionRequest:
+      type: object
+      properties:
+        language:
+          $ref: '#/components/schemas/ProgrammingLanguage'
+        title:
+          type: string
+          maxLength: 200
+      minProperties: 1
+
+    ExecuteCodeRequest:
+      type: object
+      required:
+        - code
+        - language
+      properties:
+        code:
+          type: string
+          description: Код для выполнения
+          maxLength: 100000
+        language:
+          $ref: '#/components/schemas/ProgrammingLanguage'
+        stdin:
+          type: string
+          description: Входные данные для программы
+          maxLength: 10000
+          default: ''
+        timeout:
+          type: integer
+          description: Таймаут выполнения в секундах
+          minimum: 1
+          maximum: 30
+          default: 10
+
+    # === Response Schemas ===
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - timestamp
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+          example: ok
+        timestamp:
+          type: string
+          format: date-time
+        version:
+          type: string
+          example: '1.0.0'
+        active_sessions:
+          type: integer
+          description: Количество активных сессий
+          example: 42
+
+    SessionResponse:
+      type: object
+      required:
+        - id
+        - url
+        - websocket_url
+        - language
+        - created_at
+        - status
+      properties:
+        id:
+          type: string
+          description: Уникальный ID сессии
+          example: 'abc123xyz'
+        url:
+          type: string
+          format: uri
+          description: URL для открытия в браузере
+          example: 'https://collab-editor.example.com/?session=abc123xyz'
+        websocket_url:
+          type: string
+          format: uri
+          description: WebSocket URL для подключения
+          example: 'wss://api.collab-editor.example.com/ws/abc123xyz'
+        language:
+          $ref: '#/components/schemas/ProgrammingLanguage'
+        title:
+          type: string
+          nullable: true
+          example: 'Python Interview - Candidate John'
+        created_at:
+          type: string
+          format: date-time
+          description: Время создания сессии
+        status:
+          $ref: '#/components/schemas/SessionStatus'
+        participants_count:
+          type: integer
+          description: Текущее количество подключённых участников
+          minimum: 0
+          example: 2
+
+    SessionListResponse:
+      type: object
+      required:
+        - sessions
+        - total
+      properties:
+        sessions:
+          type: array
+          items:
+            $ref: '#/components/schemas/SessionResponse'
+        total:
+          type: integer
+          description: Общее количество сессий
+          example: 150
+        limit:
+          type: integer
+          example: 50
+        offset:
+          type: integer
+          example: 0
+
+    ExecuteCodeResponse:
+      type: object
+      required:
+        - success
+        - output
+        - execution_time_ms
+      properties:
+        success:
+          type: boolean
+          description: Код выполнен без ошибок
+          example: true
+        output:
+          type: string
+          description: Вывод программы (stdout)
+          example: 'Hello, World!\n'
+        stderr:
+          type: string
+          description: Вывод ошибок (stderr)
+          default: ''
+        execution_time_ms:
+          type: integer
+          description: Время выполнения в миллисекундах
+          example: 42
+        exit_code:
+          type: integer
+          description: Код возврата программы
+          example: 0
+
+    ExecutionErrorResponse:
+      type: object
+      required:
+        - success
+        - error
+        - error_type
+      properties:
+        success:
+          type: boolean
+          enum: [false]
+        error:
+          type: string
+          description: Сообщение об ошибке
+          example: 'SyntaxError: invalid syntax'
+        error_type:
+          type: string
+          enum:
+            - syntax_error
+            - runtime_error
+            - timeout
+            - memory_limit
+          example: syntax_error
+        line:
+          type: integer
+          description: Номер строки с ошибкой
+          nullable: true
+          example: 5
+        column:
+          type: integer
+          description: Позиция в строке
+          nullable: true
+          example: 12
+
+    # === Error Schemas ===
+    ErrorResponse:
+      type: object
+      required:
+        - detail
+      properties:
+        detail:
+          type: string
+          description: Описание ошибки
+          example: 'Session not found'
+
+    HTTPValidationError:
+      type: object
+      properties:
+        detail:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationError'
+
+    ValidationError:
+      type: object
+      required:
+        - loc
+        - msg
+        - type
+      properties:
+        loc:
+          type: array
+          items:
+            oneOf:
+              - type: string
+              - type: integer
+          description: Путь к полю с ошибкой
+        msg:
+          type: string
+          description: Сообщение об ошибке
+        type:
+          type: string
+          description: Тип ошибки
+
+# WebSocket documentation (not part of OpenAPI 3.0, but documented here)
+x-websocket-endpoints:
+  /ws/{session_id}:
+    description: |
+      WebSocket endpoint для real-time синхронизации кода.
+      
+      ## Protocol
+      Используется Yjs binary sync protocol:
+      - Sync Step 1: Client sends sync request
+      - Sync Step 2: Server responds with document state
+      - Updates: Bidirectional incremental updates
+      
+      ## Message Types (binary)
+      - 0: Sync message
+      - 1: Awareness update (cursor position, selection)
+      - 2: Auth message (future use)
+      
+      ## Connection Flow
+      1. Client connects to ws://host/ws/{session_id}
+      2. Server sends current document state
+      3. Client/Server exchange incremental updates
+      4. Awareness updates broadcast cursor positions
+      
+      ## Error Handling
+      - Invalid session_id: Connection closed with code 4004
+      - Server error: Connection closed with code 1011
