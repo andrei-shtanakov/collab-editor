@@ -51,13 +51,22 @@ API для совместного редактирования кода в ре�
 )
 
 # CORS middleware - разрешаем frontend
+# In production, allow Railway domains; in dev, allow localhost
+import os
+FRONTEND_ORIGINS = [
+    "http://localhost:5173",  # Vite dev server
+    "http://localhost:3000",  # Alternative
+    "http://127.0.0.1:5173",
+]
+# Add Railway frontend domain if set
+if os.environ.get("FRONTEND_URL"):
+    FRONTEND_ORIGINS.append(os.environ["FRONTEND_URL"])
+# Also allow any Railway subdomain for flexibility
+FRONTEND_ORIGINS.append("https://splendid-insight-production.up.railway.app")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",  # Vite dev server
-        "http://localhost:3000",  # Alternative
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=FRONTEND_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
