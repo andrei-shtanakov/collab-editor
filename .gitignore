@@ -20,7 +20,7 @@ build/
 
 # uv
 .uv/
-uv.lock
+# uv.lock is committed for reproducible builds
 
 # Testing
 .pytest_cache/
