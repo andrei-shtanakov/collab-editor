@@ -128,6 +128,23 @@ npm test                          # Unit tests with Vitest (15 tests)
 npx playwright test               # E2E tests (13 tests)
 ```
 
+## Docker / Podman
+
+```bash
+# Development (hot reload)
+podman-compose up
+
+# Production (nginx + optimized builds)
+podman-compose -f docker-compose.prod.yml up -d --build
+```
+
+Key files:
+- `backend/Dockerfile` - Multi-stage (dev/prod targets)
+- `frontend/Dockerfile` - Multi-stage (dev/build/prod targets)
+- `frontend/nginx.conf` - Production nginx with API/WS proxy
+- `docker-compose.yml` - Dev with volumes for hot reload
+- `docker-compose.prod.yml` - Production with health checks
+
 ## API Endpoints
 
 | Method | Endpoint | Description |

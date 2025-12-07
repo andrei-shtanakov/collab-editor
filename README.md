@@ -91,6 +91,26 @@ cd frontend && npm test              # Frontend unit tests (15 tests)
 cd frontend && npx playwright test   # E2E tests (13 tests)
 ```
 
+## Docker / Podman
+
+### Development
+
+```bash
+podman-compose up              # Start with hot reload
+podman-compose up --build      # Rebuild images
+podman-compose down            # Stop containers
+```
+
+Open http://localhost:5173
+
+### Production
+
+```bash
+podman-compose -f docker-compose.prod.yml up -d --build
+```
+
+Open http://localhost (port 80)
+
 ## Usage
 
 ### Create Session
