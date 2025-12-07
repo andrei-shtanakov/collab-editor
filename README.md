@@ -91,6 +91,37 @@ cd frontend && npm test              # Frontend unit tests (15 tests)
 cd frontend && npx playwright test   # E2E tests (13 tests)
 ```
 
+## Deployment (Railway)
+
+### 1. Create Project on Railway
+
+1. Go to [railway.app](https://railway.app) and create new project
+2. Select "Deploy from GitHub repo"
+3. Connect your repository
+
+### 2. Add Backend Service
+
+1. Click "New Service" → "GitHub Repo"
+2. Set Root Directory: `backend`
+3. Add environment variables (Settings → Variables):
+   - Railway auto-detects the Dockerfile
+
+### 3. Add Frontend Service
+
+1. Click "New Service" → "GitHub Repo"
+2. Set Root Directory: `frontend`
+3. Add environment variables:
+   ```
+   VITE_API_URL=https://your-backend.railway.app/api
+   VITE_WS_URL=wss://your-backend.railway.app/ws
+   ```
+
+### 4. Generate Domains
+
+1. Backend: Settings → Networking → Generate Domain
+2. Frontend: Settings → Networking → Generate Domain
+3. Update frontend env vars with actual backend URL
+
 ## Docker / Podman
 
 ### Development

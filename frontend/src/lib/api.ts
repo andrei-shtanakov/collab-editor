@@ -4,7 +4,8 @@
 
 import type { Session, CreateSessionRequest } from '../types';
 
-const API_BASE = '/api';
+// In production, use VITE_API_URL env var; in dev, use relative path (proxied by Vite)
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 class ApiError extends Error {
   constructor(public status: number, message: string) {

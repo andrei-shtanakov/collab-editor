@@ -145,6 +145,19 @@ Key files:
 - `docker-compose.yml` - Dev with volumes for hot reload
 - `docker-compose.prod.yml` - Production with health checks
 
+## Railway Deployment
+
+Backend and frontend are deployed as separate services:
+
+```
+backend/railway.toml   # Dockerfile builder, prod target
+frontend/railway.toml  # Dockerfile builder, prod target
+```
+
+Environment variables for frontend:
+- `VITE_API_URL` - Backend API URL (e.g., `https://backend.railway.app/api`)
+- `VITE_WS_URL` - WebSocket URL (e.g., `wss://backend.railway.app/ws`)
+
 ## API Endpoints
 
 | Method | Endpoint | Description |

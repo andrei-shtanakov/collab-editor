@@ -79,9 +79,15 @@ export function useYjs({ sessionId, initialCode = '' }: UseYjsOptions): UseYjsRe
 
     // Determine WebSocket URL
     // Note: WebsocketProvider appends roomName to the URL, so we use /ws as base
-    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsHost = window.location.host;
-    const wsUrl = `${wsProtocol}//${wsHost}/ws`;
+    // In production, use VITE_WS_URL env var; in dev, use current host
+    let wsUrl: string;
+    if (import.meta.env.VITE_WS_URL) {
+      wsUrl = import.meta.env.VITE_WS_URL;
+    } else {
+      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsHost = window.location.host;
+      wsUrl = `${wsProtocol}//${wsHost}/ws`;
+    }
 
     // Create WebSocket provider
     // Provider will connect to: wsUrl + '/' + sessionId
