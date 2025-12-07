@@ -1,8 +1,9 @@
 [build]
-builder = "dockerfile"
-dockerfilePath = "Dockerfile"
-buildTarget = "prod"
+builder = "nixpacks"
+
+[build.nixpacksPlan.phases.build]
+cmds = ["npm run build"]
 
 [deploy]
-healthcheckPath = "/"
-healthcheckTimeout = 30
+# Serve static files from dist folder
+staticDir = "dist"
