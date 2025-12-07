@@ -48,5 +48,5 @@ RUN uv sync --frozen --no-dev
 
 EXPOSE 8000
 
-# Production server with multiple workers
-CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+# Production server - use PORT env var (Railway sets this dynamically)
+CMD ["sh", "-c", "uv run uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
