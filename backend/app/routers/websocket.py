@@ -41,8 +41,8 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
     session.add_participant(conn_id)
     
     try:
-        # Join the Yjs room with initial code from session
-        await yjs_sync.join_room(session_id, websocket, session.initial_code)
+        # Join the Yjs room
+        await yjs_sync.join_room(session_id, websocket)
         
         # Handle messages
         while True:

@@ -2,8 +2,9 @@
  * Main application component for Collaborative Code Editor
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Play, Users } from 'lucide-react';
+import type { editor } from 'monaco-editor';
 
 import { CodeEditor } from './components/CodeEditor';
 import { LanguageSelector } from './components/LanguageSelector';
@@ -23,7 +24,7 @@ function App() {
 
   // Editor state
   const [language, setLanguage] = useState<ProgrammingLanguage>('python');
-  const [code, setCode] = useState(DEFAULT_CODE.python);
+  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
 
   // Execution state
   const [isRunning, setIsRunning] = useState(false);
@@ -36,7 +37,7 @@ function App() {
     error: yjsError,
     participantsCount,
     bindEditor,
-  } = useYjs({ sessionId, initialCode: code });
+  } = useYjs({ sessionId, initialCode: DEFAULT_CODE[language] });
 
   // Check for session ID in URL on mount
   useEffect(() => {
@@ -59,13 +60,28 @@ function App() {
     }
   }, []);
 
+  // Handle editor mount
+  const handleEditorMount = useCallback((editor: editor.IStandaloneCodeEditor) => {
+    editorRef.current = editor;
+    bindEditor(editor);
+  }, [bindEditor]);
+
+  // Get current code from editor
+  const getCurrentCode = useCallback((): string => {
+    if (editorRef.current) {
+      return editorRef.current.getValue();
+    }
+    return DEFAULT_CODE[language];
+  }, [language]);
+
   // Create a new session
   const handleCreateSession = useCallback(async () => {
     setIsCreatingSession(true);
     try {
+      const currentCode = getCurrentCode();
       const newSession = await api.createSession({
         language,
-        initial_code: code,
+        initial_code: currentCode,
       });
       setSession(newSession);
       setSessionId(newSession.id);
@@ -79,7 +95,7 @@ function App() {
     } finally {
       setIsCreatingSession(false);
     }
-  }, [language, code]);
+  }, [language, getCurrentCode]);
 
   // Handle language change
   const handleLanguageChange = useCallback(
@@ -87,8 +103,8 @@ function App() {
       setLanguage(newLanguage);
 
       // Update code template if not connected to session
-      if (!sessionId) {
-        setCode(DEFAULT_CODE[newLanguage]);
+      if (!sessionId && editorRef.current) {
+        editorRef.current.setValue(DEFAULT_CODE[newLanguage]);
       }
 
       // Update session if exists
@@ -119,7 +135,8 @@ function App() {
     setResult(null);
 
     try {
-      const execResult = await executeCode(code, language);
+      const currentCode = getCurrentCode();
+      const execResult = await executeCode(currentCode, language);
       setResult(execResult);
     } catch (err: any) {
       setResult({
@@ -131,7 +148,7 @@ function App() {
     } finally {
       setIsRunning(false);
     }
-  }, [code, language]);
+  }, [language, getCurrentCode]);
 
   return (
     <div className="h-screen flex flex-col bg-gray-900 text-white">
@@ -210,8 +227,7 @@ function App() {
         <div className="flex-1 min-w-0">
           <CodeEditor
             language={language}
-            onMount={bindEditor}
-            onChange={(value) => setCode(value || '')}
+            onMount={handleEditorMount}
           />
         </div>
 

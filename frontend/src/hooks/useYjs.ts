@@ -34,6 +34,7 @@ export function useYjs({ sessionId, initialCode = '' }: UseYjsOptions): UseYjsRe
   const providerRef = useRef<WebsocketProvider | null>(null);
   const bindingRef = useRef<MonacoBinding | null>(null);
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+  const initializedRef = useRef<string | null>(null);
 
   // Cleanup function
   const cleanup = useCallback(() => {
@@ -60,6 +61,12 @@ export function useYjs({ sessionId, initialCode = '' }: UseYjsOptions): UseYjsRe
       return;
     }
 
+    // Prevent double initialization in React StrictMode
+    if (initializedRef.current === sessionId) {
+      return;
+    }
+    initializedRef.current = sessionId;
+
     setIsLoading(true);
     setError(null);
 
@@ -70,21 +77,27 @@ export function useYjs({ sessionId, initialCode = '' }: UseYjsOptions): UseYjsRe
     // Get the shared text type
     const yText = doc.getText('monaco');
 
-    // Set initial code if document is empty and we have initial code
-    if (yText.length === 0 && initialCode) {
-      yText.insert(0, initialCode);
-    }
-
     // Determine WebSocket URL
+    // Note: WebsocketProvider appends roomName to the URL, so we use /ws as base
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsHost = window.location.host;
-    const wsUrl = `${wsProtocol}//${wsHost}/ws/${sessionId}`;
+    const wsUrl = `${wsProtocol}//${wsHost}/ws`;
 
     // Create WebSocket provider
+    // Provider will connect to: wsUrl + '/' + sessionId
     const provider = new WebsocketProvider(wsUrl, sessionId, doc, {
       connect: true,
     });
     providerRef.current = provider;
+
+    // Insert initial code only after first sync, if document is empty
+    let initialCodeInserted = false;
+    provider.on('synced', (isSynced: boolean) => {
+      if (isSynced && !initialCodeInserted && yText.length === 0 && initialCode) {
+        initialCodeInserted = true;
+        yText.insert(0, initialCode);
+      }
+    });
 
     // Connection status handlers
     provider.on('status', (event: { status: string }) => {
@@ -131,7 +144,10 @@ export function useYjs({ sessionId, initialCode = '' }: UseYjsOptions): UseYjsRe
       bindingRef.current = binding;
     }
 
-    return cleanup;
+    return () => {
+      initializedRef.current = null;
+      cleanup();
+    };
   }, [sessionId, initialCode, cleanup]);
 
   // Function to bind Monaco editor
