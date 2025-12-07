@@ -1,0 +1,16 @@
+{
+  "name": "collab-editor",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n backend,frontend -c blue,green \"cd backend && uv run uvicorn app.main:app --reload --port 8000\" \"cd frontend && npm run dev\"",
+    "dev:backend": "cd backend && uv run uvicorn app.main:app --reload --port 8000",
+    "dev:frontend": "cd frontend && npm run dev",
+    "test": "concurrently \"cd backend && uv run pytest\" \"cd frontend && npm test\"",
+    "test:backend": "cd backend && uv run pytest",
+    "test:frontend": "cd frontend && npm test",
+    "test:e2e": "cd frontend && npx playwright test"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}
