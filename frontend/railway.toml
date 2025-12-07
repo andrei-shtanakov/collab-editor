@@ -1,9 +1,7 @@
 [build]
-builder = "nixpacks"
-
-[build.nixpacksPlan.phases.build]
-cmds = ["npm run build"]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile.railway"
 
 [deploy]
-# Serve static files from dist folder
-staticDir = "dist"
+healthcheckPath = "/"
+healthcheckTimeout = 30
