@@ -8,6 +8,10 @@ const backendWsUrl = backendUrl.replace('http', 'ws')
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  // Monaco workers need to be built as separate chunks
+  optimizeDeps: {
+    include: ['monaco-editor'],
+  },
   server: {
     port: 5173,
     host: true, // Listen on all interfaces (needed for Docker)
