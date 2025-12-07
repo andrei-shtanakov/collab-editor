@@ -48,6 +48,9 @@ Thumbs.db
 frontend/dist/
 frontend/build/
 *.local
+*.tsbuildinfo
+frontend/vite.config.d.ts
+frontend/vite.config.js
 
 # Logs
 *.log
