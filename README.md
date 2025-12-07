@@ -1,5 +1,7 @@
 # Collaborative Code Editor
 
+### The goal is to work with AI code agents, and to polish prompt technics.
+
 Web application for real-time collaborative code editing. Multiple users can write and edit code simultaneously, seeing each other's changes instantly.
 
 ## Features
