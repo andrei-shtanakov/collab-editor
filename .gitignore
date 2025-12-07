@@ -28,6 +28,8 @@ uv.lock
 htmlcov/
 .tox/
 .nox/
+frontend/test-results/
+frontend/playwright-report/
 
 # IDE
 .idea/
