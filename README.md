@@ -41,7 +41,16 @@ npm install
 
 ## Running
 
-### Option 1: Separate Run (for development)
+### Option 1: Quick Start (Recommended)
+
+```bash
+npm install    # Install dependencies (only first time)
+npm run dev    # Start backend and frontend together
+```
+
+Open http://localhost:5173 in your browser.
+
+### Option 2: Separate Run
 
 **Terminal 1 — Backend:**
 ```bash
@@ -55,9 +64,7 @@ cd frontend
 npm run dev
 ```
 
-Open http://localhost:5173 in your browser.
-
-### Option 2: Production Build
+### Option 3: Production Build
 
 ```bash
 # Build frontend
@@ -67,6 +74,21 @@ npm run build
 # Run backend (will serve statics from frontend/dist)
 cd ../backend
 uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+
+## Testing
+
+```bash
+npm test              # Run all tests (backend + frontend)
+npm run test:e2e      # Run E2E tests with Playwright
+```
+
+Or separately:
+
+```bash
+cd backend && uv run pytest          # Backend tests (35 tests)
+cd frontend && npm test              # Frontend unit tests (15 tests)
+cd frontend && npx playwright test   # E2E tests (13 tests)
 ```
 
 ## Usage

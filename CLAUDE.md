@@ -6,6 +6,7 @@ Real-time collaborative code editor similar to CoderPad/HackerRank. Multiple use
 
 ```
 collab-editor/
+├── package.json       # Root scripts (npm run dev runs both)
 ├── frontend/          # React + TypeScript frontend
 │   ├── src/
 │   │   ├── components/
@@ -20,6 +21,7 @@ collab-editor/
 │   │   │   └── executor.ts         # Browser-side code execution (Pyodide/JS)
 │   │   ├── App.tsx
 │   │   └── types.ts
+│   ├── e2e/           # Playwright E2E tests
 │   └── package.json
 │
 ├── backend/           # FastAPI Python backend
@@ -33,7 +35,8 @@ collab-editor/
 │   │   │   └── session.py          # Internal session model
 │   │   └── services/
 │   │       ├── session_store.py    # In-memory session storage
-│   │       └── yjs_sync.py         # Yjs CRDT sync using pycrdt
+│   │       └── yjs_sync.py         # Yjs message relay (stores updates, broadcasts)
+│   ├── tests/                      # pytest tests
 │   └── pyproject.toml
 │
 └── openapi/           # OpenAPI specification
@@ -82,18 +85,47 @@ Browser-side execution for security (no server load):
 
 ## Development
 
-### Backend
+### Quick Start (Both Servers)
+```bash
+npm install                       # Install concurrently
+npm run dev                       # Start backend + frontend together
+```
+
+### Backend Only
 ```bash
 cd backend
 uv sync                           # Install dependencies
 uv run uvicorn app.main:app --reload  # Start dev server on :8000
 ```
 
-### Frontend
+### Frontend Only
 ```bash
 cd frontend
 npm install
 npm run dev                       # Start Vite dev server on :5173
+```
+
+## Testing
+
+### All Tests
+```bash
+npm test                          # Run backend + frontend tests
+```
+
+### Backend Tests
+```bash
+cd backend
+uv run pytest                     # All tests (35 tests)
+uv run pytest tests/test_sessions.py    # Session API tests
+uv run pytest tests/test_websocket.py   # WebSocket tests
+uv run pytest tests/test_integration.py # Integration tests
+```
+
+### Frontend Tests
+```bash
+cd frontend
+npm test                          # Unit tests with Vitest (15 tests)
+npx playwright test               # E2E tests (13 tests)
 ```
 
 ## API Endpoints
